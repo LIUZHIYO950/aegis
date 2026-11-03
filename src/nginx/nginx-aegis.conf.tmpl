@@ -1,0 +1,103 @@
+# ============================================================
+# AEGIS 防护站点配置模板 (deploy.sh 渲染后写入 conf.d/aegis-site.conf)
+# 占位符: __AEGIS_HOME__ __AEGIS_KEY__ __BACKEND_HOST__ __BACKEND_PORT__ __AEGIS_VER__
+# ============================================================
+
+# 共享内存：黑名单 / 限流 / 熔断计数器
+lua_shared_dict aegis_blacklist 100m;
+lua_shared_dict aegis_rate      50m;
+lua_shared_dict aegis_flow      50m;
+
+# Lua 模块路径
+lua_package_path "__AEGIS_HOME__/lua/?.lua;;";
+
+# 慢速攻击防护（Slowloris / Slow POST / 连接耗尽）
+client_body_timeout   10s;
+client_header_timeout 10s;
+send_timeout          10s;
+keepalive_timeout     30s;
+client_max_body_size  20m;
+
+# 限制单 IP 并发连接（防连接耗尽）
+limit_conn_zone $binary_remote_addr zone=aegis_conn:10m;
+
+# 隐藏版本号
+server_tokens off;
+
+server {
+    listen 80 default_server;
+    server_name _;
+
+    limit_conn aegis_conn 200;
+
+    # 安全响应头（always 保证代理场景也生效）
+    add_header X-Frame-Options SAMEORIGIN always;
+    add_header X-Content-Type-Options nosniff always;
+    add_header Referrer-Policy no-referrer always;
+    add_header X-AEGIS "__AEGIS_VER__" always;
+    add_header Permissions-Policy "camera=(), microphone=(), geolocation=()" always;
+    # HTTPS 启用后建议开启（需替换为实际域名）:
+    # add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # 隐藏版本
+    more_set_headers "Server: AEGIS";  # 如无 headers-more 模块自动忽略
+
+    # 禁止 TRACE/TRACK（HTTP 方法滥用）
+    if ($request_method ~ ^(TRACE|TRACK)$) {
+        return 405;
+    }
+
+    # 统一入口：AEGIS 防护层
+    location / {
+        access_by_lua_file __AEGIS_HOME__/lua/aegis/init.lua;
+
+        proxy_pass http://__BACKEND_HOST__:__BACKEND_PORT__;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_connect_timeout 5s;
+        proxy_read_timeout 30s;
+        proxy_send_timeout 10s;
+    }
+
+    # 健康检查直接放行（避免告警探针误触发）
+    location = /aegis-health {
+        access_by_lua_block {
+            ngx.header.content_type = "text/plain";
+            ngx.say("AEGIS-OK __AEGIS_VER__");
+        }
+    }
+
+    # 静态资源不走防护（减少开销，可自行调整）
+    location ~* \.(js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|map)$ {
+        expires 7d;
+        add_header Cache-Control "public";
+        try_files $uri @aegis_proxy;
+    }
+    location @aegis_proxy {
+        proxy_pass http://__BACKEND_HOST__:__BACKEND_PORT__;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+}
+
+# ============================================================
+# HTTPS/TLS 安全模板（启用 HTTPS 时取消注释并替换路径）
+# 监听 443 的 server 块可复制上方 server 并改为：
+#   listen 443 ssl;
+#   ssl_certificate     /etc/nginx/ssl/fullchain.pem;
+#   ssl_certificate_key /etc/nginx/ssl/privkey.pem;
+#   ssl_protocols TLSv1.2 TLSv1.3;
+#   ssl_ciphers ECDHE-ECDSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-GCM-SHA256:ECDHE-ECDSA-AES256-GCM-SHA384:ECDHE-RSA-AES256-GCM-SHA384;
+#   ssl_prefer_server_ciphers off;
+#   ssl_session_cache shared:SSL:10m;
+#   ssl_session_timeout 10m;
+#   ssl_session_tickets off;
+#   ssl_stapling on;
+#   ssl_stapling_verify on;
+#   add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+# 说明: 开启 TLS1.3 + 强套件可有效缓解 TLS 握手型洪水与降级攻击。
+# ============================================================

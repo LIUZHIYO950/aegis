@@ -1,0 +1,16 @@
+# 编译产物
+*.pyc
+__pycache__/
+*.log
+logs/
+pack/
+
+# 本地环境
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# 密钥
+conf/hmac.key
+conf/blacklist.txt

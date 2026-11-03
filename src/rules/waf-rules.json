@@ -1,0 +1,662 @@
+{
+ "version": "1.0",
+ "engine": "regex-multi",
+ "rules": [
+  {
+   "id": 10001,
+   "name": "SQLi-union-select",
+   "severity": "high",
+   "patterns": [
+    "(?i)\\bunion\\s+(?:all\\s+)?select\\b"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10002,
+   "name": "SQLi-classic",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:'|\\\"|%27|%5c)\\s*(?:or|and)\\s+\\d",
+    "(?i)\\bor\\s+1\\s*=\\s*1\\b",
+    "(?i)\\band\\s+1\\s*=\\s*1\\b"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10003,
+   "name": "SQLi-comment-injection",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:--|#|/\\*).{0,16}(?:select|drop|insert|update|delete|union|exec)",
+    "(?i);\\s*(?:select|drop|insert|update|delete|alter|exec)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10004,
+   "name": "SQLi-sleep-benchmark",
+   "severity": "high",
+   "patterns": [
+    "(?i)\\bsleep\\s*\\(\\s*\\d",
+    "(?i)\\bbenchmark\\s*\\(\\s*\\d",
+    "(?i)\\bwaitfor\\s+delay\\b",
+    "(?i)\\bpg_sleep\\s*\\("
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10005,
+   "name": "SQLi-system-func",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:load_file|into\\s+outfile|into\\s+dumpfile|information_schema|sys\\.schema)\\s*\\(",
+    "(?i)\\b(?:@@version|version\\s*\\(|database\\s*\\(|user\\s*\\(|current_user)\\b"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10006,
+   "name": "SQLi-hex-encode",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:0x[0-9a-f]{8,}|char\\s*\\(\\s*\\d{2,})"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10007,
+   "name": "SQLi-error-based",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:extractvalue|updatexml|gtid_subset|gtid_subtract|exp\\s*\\()\\s*\\(?[^)]*\\(",
+    "(?i)sqlsrv_errors",
+    "(?i)ODBC\\s+SQL\\s+Server"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10008,
+   "name": "XSS-script-tag",
+   "severity": "high",
+   "patterns": [
+    "(?i)<\\s*script[^>]*>",
+    "(?i)<\\s*/\\s*script\\s*>",
+    "(?i)javascript\\s*:",
+    "(?i)vbscript\\s*:",
+    "(?i)on(?:load|error|click|mouseover|focus|blur|submit|change)\\s*="
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10009,
+   "name": "XSS-event-handler",
+   "severity": "high",
+   "patterns": [
+    "(?i)on(?:abort|afterprint|animationend|beforeprint|beforeunload|blur|canplay|change|click|contextmenu|copy|cut|dblclick|drag|drop|error|focus|hashchange|input|invalid|keydown|keypress|keyup|load|mousedown|mousemove|mouseout|mouseover|mouseup|offline|online|pagehide|pageshow|paste|pause|play|pointerdown|pointermove|pointerout|pointerover|pointerup|popstate|progress|ratechange|resize|scroll|search|seeked|select|stalled|submit|suspend|timeupdate|toggle|touchcancel|touchend|touchmove|touchstart|transitionend|unload|volumechange|waiting|wheel)\\s*=\\s*['\\\"]?\\s*(?:javascript|vbscript|alert|prompt|confirm|eval|document\\.|window\\.|location\\.|setTimeout|setInterval|Function\\()"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10010,
+   "name": "XSS-encoded",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:%3c|%3C|&#60;|&lt;|\\u003c|\\\\x3c)\\s*script",
+    "(?i)(?:%3e|%3E|&#62;|&gt;|\\u003e|\\\\x3e)\\s*/?\\s*script",
+    "(?i)(?:%27|%22|\\\\)\\s*on(?:error|load|click)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10011,
+   "name": "XSS-document-object",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:document\\.(?:cookie|location|write|body|getElementById)|window\\.location|eval\\s*\\(|String\\.fromCharCode|fromCharCode\\s*\\()"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10012,
+   "name": "XSS-meta-link-img",
+   "severity": "high",
+   "patterns": [
+    "(?i)<\\s*(?:meta|link|iframe|embed|object|img|svg|video|audio|source|base)[^>]*\\s(?:src|href|data|action)\\s*=\\s*['\\\"]?\\s*(?:javascript|data\\s*:\\s*text/html|vbscript)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10013,
+   "name": "CMDi-command-chars",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:;|\\||&&|\\|\\|)\\s*(?:cat|id|whoami|ls|pwd|curl|wget|nc|ncat|bash|sh|/bin/|cmd\\.exe|powershell|dir|net\\s+user|systeminfo|uname|hostname|ifconfig|ip\\s+addr|find\\s+/|rm\\s+-rf|chmod|chown|passwd|useradd|wget)\\b"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10014,
+   "name": "CMDi-backtick",
+   "severity": "high",
+   "patterns": [
+    "(?i)`\\s*[a-z_]{2,}\\s+",
+    "(?i)\\$(?:\\s*\\(|\\s*\\{)\\s*[a-z_]{2,}\\s*[|;)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10015,
+   "name": "CMDi-encoded",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:%3b|%26%26|%7c|%7c%7c)\\s*(?:cat|id|whoami|curl|wget|bash|cmd|powershell|ls|rm)",
+    "(?i)\\$\\{[^}]{4,}\\}"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10016,
+   "name": "PathTraversal",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:\\.\\.\\/|\\.\\.\\\\|\\.\\.%2f|\\.\\.%5c|%2e%2e%2f|%252e%252e)",
+    "(?i)(?:/|\\\\)(?:etc|proc|boot|sys|windows|winnt)/?(?:passwd|shadow|hosts|system32|php\\.ini|nginx\\.conf|ssh/authorized_keys|\\.ssh|\\.git/|\\.env|\\.aws/|\\.kube/)",
+    "(?i)file\\s*:\\s*//",
+    "(?i)php\\s*://(?:filter|input)",
+    "(?i)zlib\\s*://",
+    "(?i)data\\s*:\\s*text/plain"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10017,
+   "name": "LFI-RFI",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:include|require|import|source|read)\\s*[=(]\\s*['\\\"]\\s*(?:/|http|https|ftp|file)",
+    "(?i)(?:page|file|path|dir|doc|template|view|module)\\s*=\\s*(?:http|https|ftp|file|/etc/|/var/|/proc/)",
+    "(?i)allow_url_include"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10018,
+   "name": "XXE",
+   "severity": "high",
+   "patterns": [
+    "(?i)<!DOCTYPE\\s+[^>]+\\s+(?:SYSTEM|PUBLIC)\\s+[\"'](?:file|http|ftp|php|expect)",
+    "(?i)\\bENTITY\\s+\\w+\\s+(?:SYSTEM|PUBLIC)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10019,
+   "name": "SSRF",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:url|uri|target|dest|redirect|callback|next|return|link|src|host|proxy|endpoint)\\s*=\\s*(?:https?|ftp|file)://",
+    "(?i)(?:https?|ftp)://\\s*(?:127\\.0\\.0\\.1|localhost|0\\.0\\.0\\.0|10\\.|172\\.(?:1[6-9]|2[0-9]|3[01])|192\\.168\\.|169\\.254\\.|100\\.64\\.|metadata\\.google|169\\.254\\.169\\.254|100\\.100\\.100\\.200|::1|fd00:|fe80:)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10020,
+   "name": "FileUpload-php",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:\\.[a-z0-9]{1,4})?\\s*(?:php[0-9]?|phtml|pht|phar|cgi|asp|aspx|jsp|sh|py|pl|rb)\\.?(?:%00)?\\s*$",
+    "(?i)filename\\s*=\\s*[\"'][^\"']*\\.(?:php[0-9]?|phtml|phar|cgi|asp|aspx|jsp|sh|exe|py|pl)(?:\\?|\\\")"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10021,
+   "name": "TemplatesInjection",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:\\$\\{\\{|\\{\\{7\\*7|\\{7\\*7\\}|\\{\\{[a-z_]+\\.__class__|\\{\\{[a-z_]+\\.\\[|\\$\\{[a-z_]{3,}\\.[^}]*\\.)",
+    "(?i)<%\\s*=\\s*(?:request|response|session|application)",
+    "(?i)#\\{\\s*[a-z_]+\\.(?:class|getClass|toString)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10022,
+   "name": "LDAP-Injection",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:\\(\\s*\\|\\s*\\(|\\*\\)\\s*\\)|\\(\\s*&\\s*\\()",
+    "(?i)\\b(?:uid|cn|mail|sn)\\s*=\\s*\\*\\s*\\)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10023,
+   "name": "JSON-Injection",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:\\\"\\s*:\\s*\\\"[^\\\"]*\\\"\\s*[,\\}]\\s*){2,}",
+    "(?i)\\$\\{json\\}",
+    "(?i)\\{\\s*\\\"__proto__\\\"",
+    "(?i)\\{\\s*\\\"constructor\\\""
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10024,
+   "name": "HTTP-Smuggling",
+   "severity": "high",
+   "patterns": [
+    "(?i)content-length\\s*:\\s*\\d+\\s*\\r\\n\\s*transfer-encoding",
+    "(?i)transfer-encoding\\s*:\\s*chunked\\s*\\r\\n\\s*content-length",
+    "(?i)\\r\\n\\s*\\r\\n\\s*(?:GET|POST|HEAD|PUT|DELETE)\\s+/"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10025,
+   "name": "Scanner-UA",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:acunetix|nikto|sqlmap|nmap|nessus|burpsuite|masscan|hydra|dirbuster|wpscan|gobuster|ffuf|whatweb|openvas|appscan|zap|arachni|w3af|havij|pangolin|beef|metasploit|arachne|netsparker|qualys|sitefinity|joomscan|cmseek|dirmap|bbscan|wscan|byob|spartan|cobaltstrike|mimikatz|gobuster|xray|kunyu|cansina|fimap|ixxus|jaascois|jbrofuzz|nikto|nuclei|xsser)",
+    "\\b(?:python-requests|python-urllib|libwww-perl|curl\\/|wget\\/|go-http-client|java\\/|okhttp|apache-httpclient|scrapy|mechanize|zgrab|zgrab2|masscan|zmap)\\s*$"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10026,
+   "name": "SensitiveFile",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:/\\.[a-z_]{2,}/|\\.git/config|\\.git/HEAD|\\.env$|\\.aws/credentials|\\.kube/config|\\.ssh/id_rsa|web\\.config$|phpinfo\\.php|\\.htaccess$|\\.htpasswd$|\\.DS_Store$|\\.gitignore$|\\.bash_history$|id_rsa|id_dsa|\\.pem$|\\.key$|\\.p12$|\\.pfx$|backup\\.zip|bak\\.sql|\\.sql\\.bak|dump\\.sql|config\\.php\\.bak|\\.tar\\.gz$|\\.rar$|\\.7z$)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10027,
+   "name": "SQL-Dump",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:INSERT\\s+INTO|CREATE\\s+TABLE|DROP\\s+TABLE|ALTER\\s+TABLE)\\s+[`\\w]+",
+    "(?i)sql_dump",
+    "(?i)mysqldump",
+    "(?i)phpmyadmin|pma\\s*[=_-]"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10028,
+   "name": "Brute-Force-Paths",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:/wp-login\\.php|/administrator/|/admin/|/manager/|/phpmyadmin/|/mysql/|/db/|/backup/|/wp-admin/|/user/login|/member/login|/login\\.jsp|/admin\\.php)(?:\\?|$)"
+   ],
+   "action": "log"
+  },
+  {
+   "id": 10029,
+   "name": "CRLF-Injection",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:%0d%0a|%0a|%0d)\\s*(?:set-cookie|location|refresh|content-type|x-)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10030,
+   "name": "Open-Redirect",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:redirect|return|next|url|to|target|go)\\s*=\\s*(?:https?)?%2f%2f",
+    "(?i)(?:redirect|return|next|url|to|target|go)\\s*=\\s*//[^/]"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10031,
+   "name": "ServerSide-JS-Injection",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:process\\.(?:mainModule|cwd|env)|require\\s*\\(['\"]fs['\"]|__proto__|prototype\\s*=|constructor\\s*\\.)",
+    "(?i)child_process"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10032,
+   "name": "Null-Byte",
+   "severity": "medium",
+   "patterns": [
+    "(?i)%00",
+    "\\x00"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10033,
+   "name": "Webshell-Path",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:/shell|/cmd|/c99|/r57|/webshell|/c100|/b374k|/wso|/alfashell|/bypass|/backdoor|/safemode)[^/]*\\.(?:php|asp|aspx|jsp|pl|py|cgi)",
+    "(?i)(?:c99|r57|b374k|wso|alfashell)\\s*\\.(?:php|txt|jpg)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10034,
+   "name": "Base64-Overlong",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:[A-Za-z0-9+/]{100,}={0,2})"
+   ],
+   "action": "log"
+  },
+  {
+   "id": 10035,
+   "name": "Malformed-Content-Type",
+   "severity": "medium",
+   "patterns": [
+    "(?i)multipart/form-data;\\s*boundary\\s*=\\s*['\"]{0,1}\\s*(?:--|\\s)"
+   ],
+   "action": "log"
+  },
+  {
+   "id": 10036,
+   "name": "Prototype-Pollution",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:__proto__|constructor\\s*:\\s*\\{|prototype\\s*:\\s*\\{)[^}]{0,80}",
+    "(?i)\\[\\s*__proto__\\s*\\]",
+    "(?i)\\[\\s*constructor\\s*\\]"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10037,
+   "name": "Grafana-Login-ByForce",
+   "severity": "medium",
+   "patterns": [
+    "(?i)/api/(?:login|user/login|auth)",
+    "(?i)/grafana/api/"
+   ],
+   "action": "log"
+  },
+  {
+   "id": 10038,
+   "name": "Actuator-Exposure",
+   "severity": "high",
+   "patterns": [
+    "(?i)/actuator(?:/|$)",
+    "(?i)/actuator/(?:env|heapdump|mappings|beans|configprops|loggers|threaddump|metrics|shutdown|health)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10039,
+   "name": "Spring-RCE",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:class\\.module\\.classLoader|class\\.prototype\\.classLoader|jndi:ldap://|jndi:rmi://|jndi:ldaps://|\\$\\{jndi|\\$\\{env)",
+    "(?i)tomcat/spring4shell|cve-2022-22965"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10040,
+   "name": "Log4Shell",
+   "severity": "high",
+   "patterns": [
+    "(?i)\\$\\{jndi:(?:ldap|rmi|dns|ldaps|iiop)://",
+    "(?i)\\$\\{\\s*env\\s*:.*\\}",
+    "(?i)log4j\\s*2\\.\\d"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10041,
+   "name": "Jenkins-Exploit",
+   "severity": "medium",
+   "patterns": [
+    "(?i)/jenkins/script",
+    "(?i)/jenkins/descriptorByAgentId",
+    "(?i)/scriptler/run/"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10042,
+   "name": "ShellShock",
+   "severity": "high",
+   "patterns": [
+    "(?i)\\(\\)\\s*\\{\\s*:;\\s*\\}",
+    "(?i)\\(\\)\\s*\\{\\s*\\}\\]?\\s*;"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10043,
+   "name": "Crypto-Mining-Signature",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:xmrig|minergate|nicehash|cryptonight|monero|xmr\\.pool|mine\\.xmr)",
+    "(?i)/stratum/",
+    "(?i)eth\\.pool"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10044,
+   "name": "Verb-Tampering",
+   "severity": "low",
+   "patterns": [
+    "(?i)^(?:trace|track)\\b"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10045,
+   "name": "JWT-None-Alg",
+   "severity": "high",
+   "patterns": [
+    "(?i)\"alg\"\\s*:\\s*\"?none\"?"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10046,
+   "name": "JWT-Kid-Injection",
+   "severity": "high",
+   "patterns": [
+    "(?i)\"kid\"\\s*:\\s*\"[^\"]*(?:\\.\\./|;[^;\"]*cmd|/etc/passwd)",
+    "(?i)kid\\s*=\\s*[^\"]*\\bpasswd"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10047,
+   "name": "GraphQL-Introspection",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:query|mutation)?\\s*\\{?\\s*__schema\\b",
+    "(?i)\\b__type\\b\\s*\\(name\\s*:",
+    "(?i)graphql\\s*(?:introspection|schema)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10048,
+   "name": "Java-Deserialization-Gadget",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:rO0AB|rO0AC|\\xac\\xed\\x00\\x05)",
+    "(?i)ysoserial\\b",
+    "(?i)commons-collections[.:]",
+    "(?i)javax\\.script\\."
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10049,
+   "name": "PHP-FastCGI-Protocol",
+   "severity": "high",
+   "patterns": [
+    "(?i)php://(?:input|filter|temp)",
+    "(?i)/proc/self/(?:environ|fd)",
+    "(?i)fastcgi(?:_param|://)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10050,
+   "name": "Redis-Command-Injection",
+   "severity": "high",
+   "patterns": [
+    "(?i)\\b(?:config|slaveof|eval|flushall|flushdb|keys)\\s+[^\\r\\n]*\\b(?:get|set|save|dir|requirepass)\\b",
+    "(?i)\\\\r\\\\n\\\\r\\\\n\\$\\d+\\s*(?:config|eval)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10051,
+   "name": "Memcached-Command",
+   "severity": "high",
+   "patterns": [
+    "(?i)^(?:stats|get|set|add|flush_all)\\s+(?:items|slabs|cachedump)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10052,
+   "name": "Cloud-Metadata-SSRF",
+   "severity": "high",
+   "patterns": [
+    "(?i)169\\.254\\.169\\.254",
+    "(?i)metadata\\.google\\.internal",
+    "(?i)100\\.100\\.100\\.200",
+    "(?i)169\\.254\\.0\\.0/16"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10053,
+   "name": "CORS-Abuse-Reflect",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:origin|callback|redirect)\\s*=\\s*(?:null|file://|javascript:)",
+    "(?i)Access-Control-Allow-Origin\\s*[:=]\\s*(?:null|\\*)"
+   ],
+   "action": "log"
+  },
+  {
+   "id": 10054,
+   "name": "IP-Obfuscation-Rebinding",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:0x7f|0177\\.|127\\.0\\.0\\.1|127\\.1\\.|2130706433)",
+    "(?i)(?:10\\.|192\\.168\\.|172\\.(?:1[6-9]|2[0-9]|3[01])\\.)(?:%0|\\d+\\.|0x)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10055,
+   "name": "2FA-Captcha-Bypass",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:captcha|code|otp|2fa|verify)\\s*=\\s*(?:off|false|0|bypass|skip|disabled)",
+    "(?i)(?:mfa|otp)[-_]?bypass"
+   ],
+   "action": "log"
+  },
+  {
+   "id": 10056,
+   "name": "Price-Coupon-Manipulation",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:price|amount|total|discount)\\s*=\\s*-?\\d*\\.?\\d*[\\-]?\\s*0\\.?0*",
+    "(?i)coupon\\s*=\\s*(?:[a-z0-9_-]{1,3}|admin|test|free)",
+    "(?i)(?:discount|off)\\s*=\\s*(?:100|999)"
+   ],
+   "action": "log"
+  },
+  {
+   "id": 10057,
+   "name": "Admin-Path-Enumeration",
+   "severity": "low",
+   "patterns": [
+    "(?i)(?:wp-admin|wp-login|admin\\.php|manager\\.php|phpmyadmin|cgi-bin|\\.git/config|\\.svn/entries|actuator/env|swagger-ui|api-docs|\\.well-known/security)",
+    "(?i)(?:/admin|/manager|/console)(?:/|\\?|$)"
+   ],
+   "action": "log"
+  },
+  {
+   "id": 10058,
+   "name": "File-Protocol-Param",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:url|path|file|filename|img|src|dest|return)\\s*=\\s*file://",
+    "(?i)file:///[a-z]:|file:///etc|file:///proc"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10059,
+   "name": "Log4Shell-Obfuscated",
+   "severity": "critical",
+   "patterns": [
+    "(?i)\\$\\{\\s*[^}]*jndi[^}]*\\}",
+    "(?i)\\$\\{\\s*[^}]*\\$\\{[^}]*\\}\\s*[^}]*\\}",
+    "(?i)\\${(?:env|sys|lower|upper|::-)[^}]*}"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10060,
+   "name": "SpEL-Template-Injection",
+   "severity": "high",
+   "patterns": [
+    "(?i)\\$\\{\\s*T\\s*\\(\\s*java\\.",
+    "(?i)#\\{\\s*T\\s*\\(\\s*(?:java|org|com)\\."
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10061,
+   "name": "PHP-Unserialize-Gadget",
+   "severity": "high",
+   "patterns": [
+    "(?i)\\bO\\s*:\\s*\\d+\\s*:\\s*\\\"",
+    "(?i)(?:a|s|i|O):\\d+:\\{?[^\\r\\n]{0,40}\\}\\s*(?:a|O):\\d+:"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10062,
+   "name": "Mail-Header-Injection",
+   "severity": "high",
+   "patterns": [
+    "(?i)(?:%0d|%0a|\\r|\\n)\\s*(?:bcc|cc|to|from|subject)\\s*[:=]",
+    "(?i)\\r\\n(?:\\.|$)"
+   ],
+   "action": "deny"
+  },
+  {
+   "id": 10063,
+   "name": "Vault-Secret-Path-Probe",
+   "severity": "medium",
+   "patterns": [
+    "(?i)(?:/vault/|/secret[s]?/|/keys?/|/credentials|/tokens?/)(?:/|\\?|$)"
+   ],
+   "action": "log"
+  },
+  {
+   "id": 10064,
+   "name": "WebShell-Alt-Extension",
+   "severity": "high",
+   "patterns": [
+    "(?i)\\.(?:php5|phtml|php7|phar|jspx|jspa|jspf|war|aspx|ashx|asp)\\b",
+    "(?i)\\.(?:php|jsp|asp)\\s*\\.[a-z0-9]{1,4}\\b"
+   ],
+   "action": "deny"
+  }
+ ]
+}
